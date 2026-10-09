@@ -5,24 +5,22 @@ import { useEffect, useState } from "react";
 import { fetchJson, unwrapList } from "@/lib/products";
 import { authClient } from "@/lib/auth-client";
 
-export default function Header() {
+const Header = () => {
   const [categories, setCategories] = useState([]);
+
   const { data: session } = authClient.useSession();
 
   useEffect(() => {
-    let alive = true;
-
-    fetchJson("/categories")
-      .then((data) => {
-        if (alive) setCategories(unwrapList(data));
-      })
-      .catch((error) => {
+    const getCategories = async () => {
+      try {
+        const res = await fetchJson("/categories");
+        setCategories(unwrapList(res));
+      } catch (error) {
         console.error("Could not load categories:", error);
-      });
-
-    return () => {
-      alive = false;
+      }
     };
+
+    getCategories();
   }, []);
 
   return (
@@ -36,37 +34,44 @@ export default function Header() {
         </Link>
 
         <nav className="hidden items-center gap-5 md:flex">
-          <Link href="/" className="font-semibold text-gray-700 hover:text-emerald-700">
+          <Link
+            href="/"
+            className="font-semibold text-gray-700 hover:text-emerald-700"
+          >
             হোম
           </Link>
 
-          {categories.slice(0, 5).map((category, index) => {
+          {categories.map((category, index) => {
             const id =
               category.id ??
-              category.categoryId ??
               category.slug ??
-              category._id;
+              category._id ??
+              category.categoryId;
 
-            const label =
+            const name =
               category.name ??
               category.title ??
               category.categoryName ??
-              String(id);
+              String(id ?? "");
+
+            if (id === undefined || id === null || id === "") {
+              return null;
+            }
 
             return (
               <Link
-                key={String(id ?? index)}
+                key={String(id || index)}
                 href={`/category/${encodeURIComponent(String(id))}`}
                 className="text-sm font-medium text-gray-600 hover:text-emerald-700"
               >
-                {label}
+                {name}
               </Link>
             );
           })}
         </nav>
 
         <div className="flex items-center gap-2">
-          {session ? (
+          {session?.user ? (
             <Link
               href="/profile"
               className="btn btn-sm border-emerald-900 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
@@ -94,4 +99,6 @@ export default function Header() {
       </div>
     </header>
   );
-}
+};
+
+export default Header;

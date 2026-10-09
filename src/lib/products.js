@@ -1,4 +1,5 @@
-export const BASE_URL = "https://api.abcz.workers.dev/api/bazardor";
+export const BASE_URL =
+  "https://api.abcz.workers.dev/api/bazardor";
 
 export function pick(obj, keys, fallback = "") {
   for (const key of keys) {
@@ -10,6 +11,7 @@ export function pick(obj, keys, fallback = "") {
       return obj[key];
     }
   }
+
   return fallback;
 }
 
@@ -65,43 +67,52 @@ export function normalizeProduct(raw = {}) {
       )
     ) || 0;
 
+  const category = pick(
+    raw,
+    ["category", "categoryName", "categorySlug"],
+    "অন্যান্য"
+  );
+
+  const categoryId = pick(
+    raw,
+    ["categoryId", "categorySlug", "category", "categoryName"],
+    ""
+  );
+
   return {
     ...raw,
     id,
     name,
-    category: String(
-      pick(raw, ["category", "categoryName", "categorySlug"], "অন্যান্য")
-    ),
-    categoryId: String(
-      pick(
-        raw,
-        ["categoryId", "categorySlug", "category", "categoryName"],
-        ""
-      )
-    ),
+    category:
+      typeof category === "object"
+        ? category?.name || category?.title || "অন্যান্য"
+        : String(category),
+    categoryId:
+      typeof categoryId === "object"
+        ? String(
+            categoryId?.id ??
+              categoryId?._id ??
+              categoryId?.slug ??
+              categoryId?.name ??
+              ""
+          )
+        : String(categoryId),
     unit: String(
       pick(raw, ["unit", "unitName", "measurement"], "প্রতি কেজি")
     ),
     emoji: String(
-      pick(
-        raw,
-        ["emoji", "icon", "imageEmoji"],
-        emojiFor(name)
-      )
+      pick(raw, ["emoji", "icon", "imageEmoji"], emojiFor(name))
     ),
     price,
     minPrice:
-      Number(
-        pick(raw, ["minPrice", "minimumPrice", "priceMin"], price)
-      ) || price,
+      Number(pick(raw, ["minPrice", "minimumPrice", "priceMin"], price)) ||
+      price,
     maxPrice:
-      Number(
-        pick(raw, ["maxPrice", "maximumPrice", "priceMax"], price)
-      ) || price,
+      Number(pick(raw, ["maxPrice", "maximumPrice", "priceMax"], price)) ||
+      price,
     averagePrice:
-      Number(
-        pick(raw, ["averagePrice", "avgPrice", "price"], price)
-      ) || price,
+      Number(pick(raw, ["averagePrice", "avgPrice", "price"], price)) ||
+      price,
     changePercent: change,
     description: String(
       pick(
@@ -160,34 +171,41 @@ export function changeLabel(value) {
 }
 
 export async function fetchJson(path) {
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed (${response.status})`);
+  if (!res.ok) {
+    throw new Error(`API request failed: ${res.status}`);
   }
 
-  return response.json();
+  const data = await res.json();
+  return data;
 }
 
-export function unwrapList(payload) {
-  if (Array.isArray(payload)) return payload;
+export function unwrapList(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
 
-  for (const key of [
-    "data",
-    "products",
-    "categories",
-    "results",
-    "items",
-  ]) {
-    if (Array.isArray(payload?.[key])) {
-      return payload[key];
-    }
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
 
-    if (Array.isArray(payload?.data?.[key])) {
-      return payload.data[key];
-    }
+  if (Array.isArray(data?.products)) {
+    return data.products;
+  }
+
+  if (Array.isArray(data?.categories)) {
+    return data.categories;
+  }
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  if (Array.isArray(data?.items)) {
+    return data.items;
   }
 
   return [];
