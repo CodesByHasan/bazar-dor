@@ -7,7 +7,7 @@ import {
   unwrapList,
 } from "@/lib/products";
 
-import ProductCard from "@/components/ProductCard";
+import SortedProducts from "@/components/SortedProducts";
 
 async function getCategoryData(categoryId) {
   const rawProducts = await fetchJson("/products");
