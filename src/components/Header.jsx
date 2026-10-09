@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 import { fetchJson, unwrapList } from "@/lib/products";
 import { changeLabel, money, normalizeProduct } from "@/lib/products";
