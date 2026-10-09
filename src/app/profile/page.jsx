@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -51,7 +52,14 @@ export default function ProfilePage() {
         </h1>
         <p className="text-sm text-gray-500">{session.user.email}</p>
 
-        <div className="mt-8 border-t pt-6">
+        <Link
+          href="/profile/update"
+          className="btn mt-6 w-full bg-emerald-700 text-white hover:bg-emerald-800"
+        >
+          তথ্য আপডেট করুন
+        </Link>
+
+        <div className="mt-6 border-t pt-6">
           <button
             onClick={handleSignOut}
             className="btn w-full bg-rose-600 text-white hover:bg-rose-700"
