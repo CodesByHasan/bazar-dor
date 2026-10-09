@@ -4,27 +4,23 @@ import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "বাজার দর | BazarDor",
-  description: "বাংলাদেশের নিত্যপ্রয়োজনীয় পণ্যের বাজারদর এক নজরে দেখুন।",
+  description: "বাংলাদেশের নিত্যপ্রয়োজনীয় পণ্যের বাজারদর এক জায়গায় দেখুন।",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="bn" data-theme="light">
-      <body className="min-h-screen">
+      <body className="min-h-screen bg-[#f8faf7] text-gray-900">
+        <Toaster position="top-center" />
         <Header />
-        <main className="container-shell mt-8">{children}</main>
-        <footer className="mt-16 border-t border-emerald-100 bg-white">
-          <div className="container-shell flex flex-col gap-3 py-8 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-lg font-black text-emerald-950">🛒 বাজার দর</p>
-              <p className="text-gray-600">প্রয়োজনীয় পণ্যের দাম এক নজরে।</p>
-            </div>
-            <p className="max-w-lg text-gray-500">
-              সকল দাম সম্ভাব্য; বাজার অবস্থার ওপর নির্ভর করে পরিবর্তিত হয়।
-            </p>
-          </div>
+
+        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </main>
+
+        <footer className="mt-16 border-t border-gray-200 bg-white px-4 py-8 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} BazarDor — সচেতন বাজার, সঠিক সিদ্ধান্ত।
         </footer>
-        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
       </body>
     </html>
   );
