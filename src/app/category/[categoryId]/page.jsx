@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 
 import {
@@ -105,14 +104,7 @@ export default async function CategoryPage({ params }) {
           এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি।
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id || product.slug}
-              product={product}
-            />
-          ))}
-        </div>
+        <SortedProducts products={products} />
       )}
     </div>
   );
