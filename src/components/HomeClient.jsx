@@ -82,12 +82,12 @@ export default function HomeClient() {
   }, [products, searchQuery]);
 
   const priceRises = useMemo(
-    () => products.filter((p) => p.changePercent > 0).slice(0, 4),
+    () => products.filter((p) => p.changePercent > 0).slice(0, 6),
     [products]
   );
 
   const priceDrops = useMemo(
-    () => products.filter((p) => p.changePercent < 0).slice(0, 4),
+    () => products.filter((p) => p.changePercent < 0).slice(0, 6),
     [products]
   );
 
