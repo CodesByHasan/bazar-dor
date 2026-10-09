@@ -1,4 +1,4 @@
-export const BASE_URL = "<https://api.api-store.workers.dev/api/bazardor>";
+export const BASE_URL = "<https://api.abcz.workers.dev/api/bazardor>";
 
 export function pick(obj, keys, fallback = "") {
   for (const key of keys) if (obj?.[key] !== undefined && obj?.[key] !== null && obj[key] !== "") return obj[key];
