@@ -1,99 +1,86 @@
-BazarDor 🛍️
+# 🛒 বাজার দর (BazarDor)
 
-BazarDor is a responsive product discovery and shopping web application built with Next.js. Users can explore products, browse categories, sort products by price, view product details, and manage their accounts through authentication.
+বাজার দর — প্রয়োজনীয় পণ্যের দাম এক নজরে।
 
-🌐 Live Demo
+BazarDor is a responsive web app built with Next.js that shows daily essential grocery prices in Bangladesh. Users can browse products and categories, sort by price, check price changes, and view market-wise prices after signing in.
 
-- Live Website: https://bazar-dor-umber.vercel.app/
-- GitHub Repository: https://github.com/CodesByHasan/bazar-dor
+## 🌐 Live Demo
 
-✨ Features
+- **Live Website:** https://bazar-dor-umber.vercel.app/
+- **GitHub Repository:** https://github.com/CodesByHasan/bazar-dor
 
-- Responsive Design: Optimized for mobile, tablet, and desktop devices.
-- Product Discovery: Browse products fetched from the BazarDor REST API.
-- Category Browsing: Explore products by category.
-- Product Sorting: Sort products by price where supported.
-- Product Details: View individual product information on dedicated pages.
-- Protected Routes: Restrict product details and account features to authenticated users where configured.
-- Authentication: Sign up and sign in using email and password.
-- Social Login: Google and GitHub authentication through Better Auth.
-- User Profile: Access profile information and account features.
-- Loading States: Display loading indicators while data is being fetched.
-- Empty States: Provide feedback when no matching products are available.
-- Custom Error Pages: Handle missing pages with a 404 page.
-- Toast Notifications: Display feedback for user actions and errors.
-- Dynamic Routing: Use Next.js App Router for product, category, and authentication pages.
+## ✨ Key Features
 
-🛠️ Technologies Used
+- **Price Ticker:** an infinite scrolling marquee showing each product's price and ▲/▼ change.
+- **Price Risers & Fallers:** home page sections for products whose prices went up or down today.
+- **Product Cards:** Bengali-digit prices with green, red, and gray change badges.
+- **Product Details (Protected):** min, max, and average price plus market-wise prices, available only after login.
+- **Category Pages with Sorting:** sort by default, price low to high, or price high to low, using numeric values.
+- **Authentication:** email/password sign up and sign in, plus Google and GitHub login with Better Auth.
+- **Update Profile:** logged-in users can update their name from the My Profile page.
+- **Toast Notifications:** feedback for sign in, sign up, sign out, and errors using react-hot-toast.
+- **Loading & Empty States:** skeleton loaders and friendly empty and error messages.
+- **Custom 404 Page:** a friendly page with a button back to home.
+- **Fully Responsive:** works on mobile, tablet, and desktop.
 
-Technology| Purpose
-Next.js| React framework and application routing
-React| User interface development
-JavaScript (JSX)| Application logic and components
-Tailwind CSS v4| Styling and responsive layouts
-daisyUI v5| UI components and themes
-Better Auth| Authentication and session management
-MongoDB| Authentication data storage
-REST API| Product and category data
-React Toastify| Toast notifications
-Vercel| Deployment and hosting
-Git & GitHub| Version control
+## 🛠️ Technologies Used
 
-📡 API Integration
+| Technology | Purpose |
+| --- | --- |
+| Next.js (App Router) | Framework and routing |
+| React | UI components |
+| JavaScript (JSX) | Application logic |
+| Tailwind CSS v4 | Styling and responsive layout |
+| daisyUI v5 | UI components |
+| Better Auth | Authentication and sessions |
+| MongoDB | Auth data storage |
+| react-hot-toast | Toast notifications |
+| Vercel | Deployment |
 
-BazarDor retrieves product and category data from the BazarDor API.
+## 📡 API
 
-Primary API base URL:
+Product and category data comes from the BazarDor API:
 
-https://api.api-store.workers.dev/api/bazardor
+- Base URL: `https://api.abcz.workers.dev/api/bazardor`
+- Backup URL: `https://api.api-store.workers.dev/api/bazardor`
 
-Alternative API base URL:
+Endpoints used: `/products`, `/products/:id`, `/categories`.
 
-https://api.abcz.workers.dev/api/bazardor
+## 📁 Project Structure
 
-The application uses the API to retrieve product listings, category information, and individual product details. The exact endpoint paths and response structures depend on the API implementation.
-
-📁 Project Structure
-
+```text
 bazar-dor/
 ├── public/
 ├── src/
 │   ├── app/
-│   │   ├── api/
-│   │   │   └── auth/
-│   │   │       └── [...all]/
-│   │   │           └── route.js
-│   │   ├── category/
-│   │   │   └── [categoryId]/
-│   │   ├── product/
-│   │   │   └── [slug]/
-│   │   ├── signin/
-│   │   ├── signup/
+│   │   ├── api/auth/[...all]/route.js
+│   │   ├── category/[categoryId]/page.jsx
+│   │   ├── product/[id]/page.jsx
 │   │   ├── profile/
+│   │   │   ├── page.jsx
+│   │   │   └── update/page.js
+│   │   ├── signin/page.jsx
+│   │   ├── signup/page.jsx
 │   │   ├── layout.js
-│   │   ├── page.js
-│   │   └── not-found.js
+│   │   ├── loading.jsx
+│   │   ├── not-found.jsx
+│   │   └── page.js
 │   ├── components/
 │   │   ├── Header.jsx
 │   │   ├── HomeClient.jsx
-│   │   └── ProductCard.jsx
-│   └── lib/
-│       ├── auth.js
-│       ├── auth-client.js
-│       └── products.js
-├── .env.example
-├── .gitignore
+│   │   ├── PriceMarquee.jsx
+│   │   ├── ProductCard.jsx
+│   │   └── SortedProducts.jsx
+│   ├── lib/
+│   │   ├── auth.js
+│   │   ├── auth-client.js
+│   │   └── products.js
+│   └── proxy.js
 ├── package.json
 └── README.md
+```
 
-Note: The structure above summarizes the main application areas. Individual filenames may differ in your current repository.
-.
 
-👨‍💻 Author
+## 👨‍💻 Author
 
-Hasan Mehedi
-
-- GitHub: https://github.com/CodesByHasan
-
-📄 License
-This project is intended for educational and portfolio purposes. Add a license file if you plan to distribute it under a specific open-source license.
+**Hasan Mehedi**: [GitHub](https://github.com/CodesByHasan)
