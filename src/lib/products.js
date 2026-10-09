@@ -3,12 +3,10 @@ export const BASE_URL =
 
 export function pick(obj, keys, fallback = "") {
   for (const key of keys) {
-    if (
-      obj?.[key] !== undefined &&
-      obj?.[key] !== null &&
-      obj[key] !== ""
-    ) {
-      return obj[key];
+    const value = obj?.[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
     }
   }
 
@@ -27,6 +25,7 @@ export function emojiFor(name = "") {
   if (/মাছ|fish|ইলিশ/.test(n)) return "🐟";
   if (/মুরগি|মাংস|chicken|meat/.test(n)) return "🍗";
   if (/ডিম|egg/.test(n)) return "🥚";
+  if (/দুধ|দই|milk|yogurt/.test(n)) return "🥛";
   if (/আদা|ginger/.test(n)) return "🫚";
   if (/রসুন|garlic/.test(n)) return "🧄";
   if (/টমেটো|tomato/.test(n)) return "🍅";
@@ -36,96 +35,191 @@ export function emojiFor(name = "") {
   return "🛒";
 }
 
+function normalizeUnit(unit) {
+  const units = {
+    kg: "কেজি",
+    kilogram: "কেজি",
+    litre: "লিটার",
+    liter: "লিটার",
+    dozen: "ডজন",
+    piece: "পিস",
+  };
+
+  const value = String(unit || "kg");
+  return units[value.toLowerCase()] || value;
+}
+
 export function normalizeProduct(raw = {}) {
+  // Support APIs that wrap a product inside { data: {...} }.
+  const product =
+    raw?.data && !Array.isArray(raw.data) && typeof raw.data === "object"
+      ? raw.data
+      : raw;
+
   const id = String(
-    pick(raw, ["id", "_id", "productId", "slug"], "")
+    pick(product, ["id", "_id", "productId", "slug"], "")
   );
+
+  const slug = String(pick(product, ["slug"], id));
 
   const name = String(
     pick(
-      raw,
-      ["name", "title", "productName", "nameBn"],
+      product,
+      ["nameBn", "name", "title", "productName"],
       "নাম পাওয়া যায়নি"
     )
   );
 
-  const price =
-    Number(
-      pick(
-        raw,
-        ["price", "currentPrice", "todayPrice", "averagePrice", "avgPrice"],
-        0
-      )
-    ) || 0;
-
-  const change =
-    Number(
-      pick(
-        raw,
-        ["changePercent", "change", "percentageChange", "priceChange"],
-        0
-      )
-    ) || 0;
-
-  const category = pick(
-    raw,
-    ["category", "categoryName", "categorySlug"],
-    "অন্যান্য"
+  const categorySlug = String(
+    pick(
+      product,
+      ["category", "categorySlug", "categoryId"],
+      ""
+    )
   );
 
-  const categoryId = pick(
-    raw,
-    ["categoryId", "categorySlug", "category", "categoryName"],
-    ""
+  const categoryName = String(
+    pick(
+      product,
+      ["categoryNameBn", "categoryName", "categoryTitle"],
+      categorySlug || "অন্যান্য"
+    )
+  );
+
+  // Actual API field: today
+  const price = Number(
+    pick(
+      product,
+      ["today", "price", "currentPrice", "todayPrice", "averagePrice", "avgPrice"],
+      0
+    )
+  ) || 0;
+
+  const markets = Array.isArray(product.markets)
+    ? product.markets
+    : Array.isArray(product.bazars)
+      ? product.bazars
+      : [];
+
+  // API stores min/max prices inside each market.
+  const marketMins = markets
+    .map((market) => Number(market.min))
+    .filter(Number.isFinite);
+
+  const marketMaxes = markets
+    .map((market) => Number(market.max))
+    .filter(Number.isFinite);
+
+  const minPrice = Number(
+    pick(product, ["minPrice", "minimumPrice", "priceMin"], "")
+  );
+
+  const maxPrice = Number(
+    pick(product, ["maxPrice", "maximumPrice", "priceMax"], "")
+  );
+
+  // Actual API shape: change: { dir: "up", pct: 2.1 }
+  const rawChange = product.change;
+
+  const changePercent = Number(
+    typeof rawChange === "object" && rawChange !== null
+      ? pick(
+          rawChange,
+          ["pct", "percentage", "percent"],
+          pick(
+            product,
+            ["changePercent", "percentageChange", "priceChange"],
+            0
+          )
+        )
+      : pick(
+          product,
+          ["changePercent", "change", "percentageChange", "priceChange"],
+          0
+        )
+  ) || 0;
+
+  const changeDirection =
+    typeof rawChange === "object" && rawChange !== null
+      ? String(pick(rawChange, ["dir", "direction"], ""))
+      : changePercent > 0
+        ? "up"
+        : changePercent < 0
+          ? "down"
+          : "flat";
+
+  const image = String(
+    pick(
+      product,
+      ["image", "emoji", "icon", "imageEmoji"],
+      emojiFor(name)
+    )
   );
 
   return {
-    ...raw,
+    ...product,
+
     id,
+    slug,
     name,
-    category:
-      typeof category === "object"
-        ? category?.name || category?.title || "অন্যান্য"
-        : String(category),
-    categoryId:
-      typeof categoryId === "object"
-        ? String(
-            categoryId?.id ??
-              categoryId?._id ??
-              categoryId?.slug ??
-              categoryId?.name ??
-              ""
-          )
-        : String(categoryId),
-    unit: String(
-      pick(raw, ["unit", "unitName", "measurement"], "প্রতি কেজি")
-    ),
-    emoji: String(
-      pick(raw, ["emoji", "icon", "imageEmoji"], emojiFor(name))
-    ),
+    nameBn: name,
+
+    category: categoryName,
+    categoryName,
+    categoryNameBn: categoryName,
+    categoryId: categorySlug,
+    categorySlug,
+
+    unit: normalizeUnit(product.unit),
+
+    // API provides an emoji in its image field.
+    image,
+    emoji: image,
+
     price,
+    today: price,
+
+    yesterday: Number(product.yesterday) || 0,
+    lastWeek: Number(product.lastWeek) || 0,
+    lastMonth: Number(product.lastMonth) || 0,
+
     minPrice:
-      Number(pick(raw, ["minPrice", "minimumPrice", "priceMin"], price)) ||
-      price,
+      Number.isFinite(minPrice) && minPrice > 0
+        ? minPrice
+        : marketMins.length
+          ? Math.min(...marketMins)
+          : price,
+
     maxPrice:
-      Number(pick(raw, ["maxPrice", "maximumPrice", "priceMax"], price)) ||
-      price,
+      Number.isFinite(maxPrice) && maxPrice > 0
+        ? maxPrice
+        : marketMaxes.length
+          ? Math.max(...marketMaxes)
+          : price,
+
     averagePrice:
-      Number(pick(raw, ["averagePrice", "avgPrice", "price"], price)) ||
-      price,
-    changePercent: change,
+      Number(product.averagePrice ?? product.avgPrice) || price,
+
+    changePercent,
+    changeDirection,
+
+    change: {
+      ...(typeof rawChange === "object" && rawChange !== null
+        ? rawChange
+        : {}),
+      dir: changeDirection,
+      pct: changePercent,
+    },
+
     description: String(
       pick(
-        raw,
+        product,
         ["description", "summary", "details"],
-        "আজকের বাজারদরের সংক্ষিপ্ত তথ্য।"
+        `${name} এর আজকের বাজারদর ও বিভিন্ন বাজারের মূল্যতথ্য।`
       )
     ),
-    markets: Array.isArray(raw.markets)
-      ? raw.markets
-      : Array.isArray(raw.bazars)
-        ? raw.bazars
-        : [],
+
+    markets,
   };
 }
 
@@ -171,42 +265,56 @@ export function changeLabel(value) {
 }
 
 export async function fetchJson(path) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const normalizedPath = String(path).startsWith("/")
+    ? path
+    : `/${path}`;
+
+  const response = await fetch(`${BASE_URL}${normalizedPath}`, {
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    throw new Error(`API request failed: ${res.status}`);
+  if (!response.ok) {
+    throw new Error(
+      `API request failed (${response.status}): ${normalizedPath}`
+    );
   }
 
-  const data = await res.json();
-  return data;
+  return response.json();
 }
 
-export function unwrapList(data) {
-  if (Array.isArray(data)) {
-    return data;
+export function unwrapList(payload) {
+  if (Array.isArray(payload)) return payload;
+
+  if (!payload || typeof payload !== "object") return [];
+
+  for (const key of [
+    "products",
+    "categories",
+    "results",
+    "items",
+    "data",
+  ]) {
+    if (Array.isArray(payload[key])) {
+      return payload[key];
+    }
+
+    if (
+      payload[key] &&
+      typeof payload[key] === "object"
+    ) {
+      for (const nestedKey of [
+        "products",
+        "categories",
+        "results",
+        "items",
+      ]) {
+        if (Array.isArray(payload[key][nestedKey])) {
+          return payload[key][nestedKey];
+        }
+      }
+    }
   }
 
-  if (Array.isArray(data?.data)) {
-    return data.data;
-  }
-
-  if (Array.isArray(data?.products)) {
-    return data.products;
-  }
-
-  if (Array.isArray(data?.categories)) {
-    return data.categories;
-  }
-
-  if (Array.isArray(data?.results)) {
-    return data.results;
-  }
-
-  if (Array.isArray(data?.items)) {
-    return data.items;
-  }
-
+  // A single product/category object isn't a list.
   return [];
 }

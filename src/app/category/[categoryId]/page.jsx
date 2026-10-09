@@ -1,84 +1,85 @@
+
 import Link from "next/link";
-import { fetchJson, normalizeProduct, unwrapList } from "@/lib/products";
+
+import {
+  fetchJson,
+  normalizeProduct,
+  unwrapList,
+} from "@/lib/products";
+
 import ProductCard from "@/components/ProductCard";
 
-export async function generateMetadata({ params }) {
-  const { categoryId } = await params;
+async function getCategoryData(categoryId) {
+  const rawProducts = await fetchJson("/products");
+  const allProducts = unwrapList(rawProducts);
 
-  try {
-    const res = await fetchJson(
-      `/categories/${encodeURIComponent(categoryId)}`
+  const matchingRawProducts = allProducts.filter((product) => {
+    const slug = String(
+      product?.category ??
+        product?.categorySlug ??
+        product?.categoryId ??
+        ""
     );
 
-    const category = unwrapList(res)[0] || res?.data || res;
+    return slug.toLowerCase() === String(categoryId).toLowerCase();
+  });
+
+  const categoryTitle =
+    matchingRawProducts[0]?.categoryNameBn ||
+    matchingRawProducts[0]?.categoryName ||
+    categoryId;
+
+  return {
+    categoryTitle,
+    products: matchingRawProducts.map(normalizeProduct),
+  };
+}
+
+export async function generateMetadata({ params }) {
+  const resolvedParams = await params;
+  const categoryId = resolvedParams?.categoryId;
+
+  if (!categoryId) {
+    return { title: "ক্যাটাগরি | BazarDor" };
+  }
+
+  try {
+    const { categoryTitle } = await getCategoryData(categoryId);
 
     return {
-      title: `${category?.name || category?.title || categoryId} - বাজার দর | BazarDor`,
+      title: `${categoryTitle} - বাজার দর | BazarDor`,
     };
-  } catch {
+  } catch (error) {
+    console.error("Could not load category metadata:", error);
+
     return {
       title: "ক্যাটাগরি | BazarDor",
     };
   }
 }
 
-const CategoryPage = async ({ params }) => {
-  const { categoryId } = await params;
+export default async function CategoryPage({ params }) {
+  const resolvedParams = await params;
+  const categoryId = resolvedParams?.categoryId;
 
-  let categoryTitle = categoryId;
   let products = [];
+  let categoryTitle = categoryId || "ক্যাটাগরি";
+  let loadError = false;
 
-  // Fetch category information
-  try {
-    const res = await fetchJson(
-      `/categories/${encodeURIComponent(categoryId)}`
-    );
-
-    const category = unwrapList(res)[0] || res?.data || res;
-
-    categoryTitle =
-      category?.name ||
-      category?.title ||
-      category?.categoryName ||
-      categoryId;
-  } catch (error) {
-    console.error("Category fetch error:", error);
-  }
-
-  // Fetch category products
-  try {
-    const res = await fetchJson(
-      `/products?category=${encodeURIComponent(categoryId)}`
-    );
-
-    products = unwrapList(res).map(normalizeProduct);
-  } catch (error) {
-    console.error("Products fetch error:", error);
-  }
-
-  // If the category endpoint returns no products, filter all products
-  if (products.length === 0) {
+  if (categoryId) {
     try {
-      const res = await fetchJson("/products");
-      const allProducts = unwrapList(res).map(normalizeProduct);
+      const result = await getCategoryData(categoryId);
 
-      products = allProducts.filter((product) => {
-        return (
-          String(product.categoryId).toLowerCase() ===
-            String(categoryId).toLowerCase() ||
-          String(product.category).toLowerCase() ===
-            String(categoryId).toLowerCase() ||
-          String(product.categorySlug || "").toLowerCase() ===
-            String(categoryId).toLowerCase()
-        );
-      });
+      categoryTitle = result.categoryTitle;
+      products = result.products;
     } catch (error) {
-      console.error("All products fetch error:", error);
+      console.error("Could not load category products:", error);
+      loadError = true;
     }
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8">
+    <div>
       <div className="mb-6 flex items-center gap-4">
         <Link
           href="/"
@@ -89,23 +90,30 @@ const CategoryPage = async ({ params }) => {
 
         <h1 className="text-2xl font-black text-gray-900 sm:text-3xl">
           ক্যাটাগরি:{" "}
-          <span className="text-emerald-800">{categoryTitle}</span>
+          <span className="text-emerald-800">
+            {categoryTitle}
+          </span>
         </h1>
       </div>
 
-      {products.length === 0 ? (
+      {loadError ? (
+        <div className="rounded-2xl border border-red-200 bg-white p-12 text-center text-red-600 shadow-sm">
+          পণ্যের তথ্য লোড করা যায়নি। অনুগ্রহ করে পরে আবার চেষ্টা করুন।
+        </div>
+      ) : products.length === 0 ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center text-gray-500 shadow-sm">
           এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি।
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard
+              key={product.id || product.slug}
+              product={product}
+            />
           ))}
         </div>
       )}
     </div>
   );
-};
-
-export default CategoryPage;
+}

@@ -2,37 +2,95 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchJson, unwrapList } from "@/lib/products";
+import { fetchJson, unwrapList, toBengaliDigits } from "@/lib/products";
 import { authClient } from "@/lib/auth-client";
 
-const Header = () => {
-  const [categories, setCategories] = useState([]);
+// Helper function to format today's date in Bengali locale (e.g., "মঙ্গলবার, ৬ অক্টোবর, ২০২৬")
+function getBengaliFormattedDate() {
+  const daysBn = [
+    "রবিবার",
+    "সোমবার",
+    "মঙ্গলবার",
+    "বুধবার",
+    "বৃহস্পতিবার",
+    "শুক্রবার",
+    "শনিবার",
+  ];
+  const monthsBn = [
+    "জানুয়ারি",
+    "ফেব্রুয়ারি",
+    "মার্চ",
+    "এপ্রিল",
+    "মে",
+    "জুন",
+    "জুলাই",
+    "আগস্ট",
+    "সেপ্টেম্বর",
+    "অক্টোবর",
+    "নভেম্বর",
+    "ডিসেম্বর",
+  ];
 
+  const now = new Date();
+  const dayName = daysBn[now.getDay()];
+  const dateNum = toBengaliDigits(now.getDate());
+  const monthName = monthsBn[now.getMonth()];
+  const yearNum = toBengaliDigits(now.getFullYear());
+
+  return `${dayName}, ${dateNum} ${monthName}, ${yearNum}`;
+}
+
+export default function Header() {
+  const [categories, setCategories] = useState([]);
+  const [formattedDate, setFormattedDate] = useState("");
   const { data: session } = authClient.useSession();
 
   useEffect(() => {
-    const getCategories = async () => {
+    let alive = true;
+
+    // Set client-side formatted date to prevent hydration mismatch
+    setFormattedDate(getBengaliFormattedDate());
+
+    async function loadCategories() {
       try {
-        const res = await fetchJson("/categories");
-        setCategories(unwrapList(res));
+        const response = await fetchJson("/categories");
+        const categoryData = unwrapList(response);
+
+        if (alive) {
+          setCategories(categoryData);
+        }
       } catch (error) {
         console.error("Could not load categories:", error);
+        if (alive) setCategories([]);
       }
-    };
+    }
 
-    getCategories();
+    loadCategories();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-emerald-900/10 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="text-2xl font-black tracking-tight text-emerald-900"
-        >
-          🛒 বাজার দর
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        {/* Brand Logo & Date Section */}
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <div className="grid size-12 place-items-center rounded-2xl bg-emerald-600 text-2xl shadow-sm transition group-hover:bg-emerald-700">
+            🛒
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-black leading-tight text-gray-900">
+              বাজার দর
+            </span>
+            <span className="text-xs font-medium text-gray-500">
+              {formattedDate || "আজকের তারিখ"}
+            </span>
+          </div>
         </Link>
 
+        {/* Navigation Categories */}
         <nav className="hidden items-center gap-5 md:flex">
           <Link
             href="/"
@@ -42,35 +100,35 @@ const Header = () => {
           </Link>
 
           {categories.map((category, index) => {
-            const id =
+            const catId =
               category.id ??
               category.slug ??
-              category._id ??
-              category.categoryId;
+              category.categoryId ??
+              category._id;
 
-            const name =
+            const label =
+              category.nameBn ??
               category.name ??
               category.title ??
               category.categoryName ??
-              String(id ?? "");
+              String(catId);
 
-            if (id === undefined || id === null || id === "") {
-              return null;
-            }
+            if (!catId) return null;
 
             return (
               <Link
-                key={String(id || index)}
-                href={`/category/${encodeURIComponent(String(id))}`}
-                className="text-sm font-medium text-gray-600 hover:text-emerald-700"
+                key={String(catId ?? index)}
+                href={`/category/${encodeURIComponent(String(catId))}`}
+                className="whitespace-nowrap text-sm font-medium text-gray-600 hover:text-emerald-700"
               >
-                {name}
+                {label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        {/* User Auth Buttons */}
+        <div className="flex shrink-0 items-center gap-2">
           {session?.user ? (
             <Link
               href="/profile"
@@ -99,6 +157,4 @@ const Header = () => {
       </div>
     </header>
   );
-};
-
-export default Header;
+}
