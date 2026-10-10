@@ -1,5 +1,5 @@
 export const BASE_URL =
-"https://api.api-store.workers.dev/api/bazardor";
+"https://openapi.programming-hero.com/api/bazardor";
 
 export function pick(obj, keys, fallback = "") {
   for (const key of keys) {
