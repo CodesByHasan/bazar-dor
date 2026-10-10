@@ -36,24 +36,42 @@ const SortedProducts = ({ products }) => {
           সাজান:
         </label>
 
-        <select
-          id="sort"
-          value={sortBy}
-          onChange={(event) =>
-            setSortBy(event.target.value)
-          }
-          className="select select-bordered w-full max-w-xs bg-white text-black"
-        >
-          <option value="default">ডিফল্ট</option>
+        <div className="relative w-full max-w-xs">
+          <select
+            id="sort"
+            value={sortBy}
+            onChange={(event) =>
+              setSortBy(event.target.value)
+            }
+            className="select select-bordered w-full bg-white bg-none pr-10 text-black"
+          >
+            <option value="default">ডিফল্ট</option>
 
-          <option value="low">
-            দাম: কম থেকে বেশি
-          </option>
+            <option value="low">
+              দাম: কম থেকে বেশি
+            </option>
 
-          <option value="high">
-            দাম: বেশি থেকে কম
-          </option>
-        </select>
+            <option value="high">
+              দাম: বেশি থেকে কম
+            </option>
+          </select>
+
+          {/* Chevron icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2"
+            stroke="currentColor"
+            className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-gray-600"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+            />
+          </svg>
+        </div>
       </div>
 
       {/* Product List */}
