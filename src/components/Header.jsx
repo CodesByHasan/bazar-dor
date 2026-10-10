@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { fetchJson, unwrapList, toBengaliDigits } from "@/lib/products";
-import { authClient } from "@/lib/auth-client";
 
-// Helper function to format today's date in Bengali locale (e.g., "মঙ্গলবার, ৬ অক্টোবর, ২০২৬")
-function getBengaliFormattedDate() {
+import { authClient } from "@/lib/auth-client";
+import { fetchJson, unwrapList, toBengaliDigits } from "@/lib/products";
+
+const getBengaliFormattedDate = () => {
   const daysBn = [
     "রবিবার",
     "সোমবার",
@@ -16,6 +17,7 @@ function getBengaliFormattedDate() {
     "শুক্রবার",
     "শনিবার",
   ];
+
   const monthsBn = [
     "জানুয়ারি",
     "ফেব্রুয়ারি",
@@ -32,109 +34,185 @@ function getBengaliFormattedDate() {
   ];
 
   const now = new Date();
-  const dayName = daysBn[now.getDay()];
-  const dateNum = toBengaliDigits(now.getDate());
-  const monthName = monthsBn[now.getMonth()];
-  const yearNum = toBengaliDigits(now.getFullYear());
 
-  return `${dayName}, ${dateNum} ${monthName}, ${yearNum}`;
-}
+  return `${daysBn[now.getDay()]}, ${toBengaliDigits(
+    now.getDate()
+  )} ${monthsBn[now.getMonth()]}, ${toBengaliDigits(now.getFullYear())}`;
+};
 
-export default function Header() {
-  const [categories, setCategories] = useState([]);
-  const [formattedDate, setFormattedDate] = useState("");
+const Header = () => {
+  const pathname = usePathname();
   const { data: session } = authClient.useSession();
 
-  useEffect(() => {
-    let alive = true;
+  const [categories, setCategories] = useState([]);
+  const [formattedDate, setFormattedDate] = useState("");
 
-    // Set client-side formatted date to prevent hydration mismatch
+  useEffect(() => {
     setFormattedDate(getBengaliFormattedDate());
 
-    async function loadCategories() {
+    const loadCategories = async () => {
       try {
         const response = await fetchJson("/categories");
-        const categoryData = unwrapList(response);
-
-        if (alive) {
-          setCategories(categoryData);
-        }
+        setCategories(unwrapList(response));
       } catch (error) {
         console.error("Could not load categories:", error);
-        if (alive) setCategories([]);
       }
-    }
+    };
 
     loadCategories();
-
-    return () => {
-      alive = false;
-    };
   }, []);
+
+  // Same list is used by mobile and desktop menus
+  const categoryLinks = categories
+    .map((category) => {
+      const id =
+        category.id ??
+        category.slug ??
+        category.categoryId ??
+        category._id;
+
+      const label =
+        category.nameBn ??
+        category.name ??
+        category.title ??
+        category.categoryName ??
+        String(id);
+
+      return { id: id ? String(id) : "", label };
+    })
+    .filter((item) => item.id);
+
+  // Close the mobile dropdown after tapping a link
+  const closeMenu = () => {
+    document.activeElement?.blur();
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-emerald-900/10 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        {/* Brand Logo & Date Section */}
-        <Link href="/" className="flex items-center gap-3 shrink-0 group">
-          <div className="grid size-12 place-items-center rounded-2xl bg-emerald-600 text-2xl shadow-sm transition group-hover:bg-emerald-700">
-            🛒
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black leading-tight text-gray-900">
-              বাজার দর
-            </span>
-            <span className="text-xs font-medium text-gray-500">
-              {formattedDate || "আজকের তারিখ"}
-            </span>
-          </div>
-        </Link>
+      <div className="navbar mx-auto max-w-7xl px-4">
 
-        {/* Navigation Categories */}
-        <nav className="hidden items-center gap-5 md:flex">
-          <Link
-            href="/"
-            className="font-semibold text-gray-700 hover:text-emerald-700"
-          >
-            হোম
-          </Link>
-
-          {categories.map((category, index) => {
-            const catId =
-              category.id ??
-              category.slug ??
-              category.categoryId ??
-              category._id;
-
-            const label =
-              category.nameBn ??
-              category.name ??
-              category.title ??
-              category.categoryName ??
-              String(catId);
-
-            if (!catId) return null;
-
-            return (
-              <Link
-                key={String(catId ?? index)}
-                href={`/category/${encodeURIComponent(String(catId))}`}
-                className="whitespace-nowrap text-sm font-medium text-gray-600 hover:text-emerald-700"
+        {/* Mobile Menu + Logo */}
+        <div className="navbar-start">
+          <div className="dropdown">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-ghost btn-square btn-sm lg:hidden"
+            >
+              <svg
+                aria-label="Menu"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </div>
 
-        {/* User Auth Buttons */}
-        <div className="flex shrink-0 items-center gap-2">
+            <ul
+              tabIndex={-1}
+              className="menu menu-sm dropdown-content z-50 mt-3 w-56 rounded-box bg-white p-2 text-gray-700 shadow"
+            >
+              <li>
+                <Link
+                  href="/"
+                  onClick={closeMenu}
+                  className={
+                    pathname === "/"
+                      ? "font-bold text-emerald-700"
+                      : ""
+                  }
+                >
+                  হোম
+                </Link>
+              </li>
+
+              {categoryLinks.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={`/category/${encodeURIComponent(item.id)}`}
+                    onClick={closeMenu}
+                    className={
+                      pathname === `/category/${item.id}`
+                        ? "font-bold text-emerald-700"
+                        : ""
+                    }
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <Link href="/" className="flex items-center gap-2">
+            <div className="grid size-10 place-items-center rounded-2xl bg-emerald-600 text-xl">
+              🛒
+            </div>
+
+            <div className="flex flex-col">
+              <span className="text-lg font-black leading-tight text-gray-900">
+                বাজার দর
+              </span>
+
+              <span className="text-[11px] font-medium text-gray-500">
+                {formattedDate || "আজকের তারিখ"}
+              </span>
+            </div>
+          </Link>
+        </div>
+
+        {/* Desktop Navigation */}
+        <div className="navbar-center hidden lg:flex">
+          <ul className="menu menu-horizontal px-1 text-gray-700">
+            <li>
+              <Link
+                href="/"
+                className={
+                  pathname === "/"
+                    ? "font-bold text-emerald-700"
+                    : ""
+                }
+              >
+                হোম
+              </Link>
+            </li>
+
+            {categoryLinks.map((item) => (
+              <li key={item.id}>
+                <Link
+                  href={`/category/${encodeURIComponent(item.id)}`}
+                  className={
+                    pathname === `/category/${item.id}`
+                      ? "font-bold text-emerald-700"
+                      : ""
+                  }
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Auth Buttons */}
+        <div className="navbar-end gap-2">
           {session?.user ? (
             <Link
               href="/profile"
               className="btn btn-sm border-emerald-900 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
             >
-              প্রোফাইল ({session.user.name || "User"})
+              প্রোফাইল
+              <span className="hidden sm:inline">
+                ({session.user.name || "User"})
+              </span>
             </Link>
           ) : (
             <>
@@ -157,4 +235,6 @@ export default function Header() {
       </div>
     </header>
   );
-}
+};
+
+export default Header;
