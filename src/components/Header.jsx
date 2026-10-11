@@ -89,15 +89,15 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-40 border-b border-emerald-900/10 bg-white/95 backdrop-blur">
-      <div className="navbar mx-auto max-w-7xl px-4">
+      <div className="navbar mx-auto max-w-7xl gap-2 px-4">
 
         {/* Mobile Menu + Logo */}
-        <div className="navbar-start">
+        <div className="navbar-start w-auto flex-none">
           <div className="dropdown">
             <div
               tabIndex={0}
               role="button"
-              className="btn btn-ghost btn-square btn-sm lg:hidden"
+              className="btn btn-ghost btn-square btn-sm md:hidden"
             >
               <svg
                 aria-label="Menu"
@@ -170,15 +170,15 @@ const Header = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <div className="navbar-center hidden lg:flex">
-          <ul className="menu menu-horizontal px-1 text-gray-700">
+        <div className="navbar-center hidden min-w-0 flex-1 justify-center md:flex">
+          <ul className="menu menu-horizontal flex-nowrap gap-1 overflow-x-auto px-1 text-sm text-gray-700">
             <li>
               <Link
                 href="/"
                 className={
                   pathname === "/"
-                    ? "font-bold text-emerald-700"
-                    : ""
+                    ? "whitespace-nowrap font-bold text-emerald-700"
+                    : "whitespace-nowrap"
                 }
               >
                 হোম
@@ -191,8 +191,8 @@ const Header = () => {
                   href={`/category/${encodeURIComponent(item.id)}`}
                   className={
                     pathname === `/category/${item.id}`
-                      ? "font-bold text-emerald-700"
-                      : ""
+                      ? "whitespace-nowrap font-bold text-emerald-700"
+                      : "whitespace-nowrap"
                   }
                 >
                   {item.label}
@@ -203,14 +203,14 @@ const Header = () => {
         </div>
 
         {/* Auth Buttons */}
-        <div className="navbar-end gap-2">
+        <div className="navbar-end ml-auto w-auto flex-none gap-2">
           {session?.user ? (
             <Link
               href="/profile"
               className="btn btn-sm border-emerald-900 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
             >
               প্রোফাইল
-              <span className="hidden sm:inline">
+              <span className="hidden lg:inline">
                 ({session.user.name || "User"})
               </span>
             </Link>
