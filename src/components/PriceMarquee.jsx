@@ -1,18 +1,34 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchJson, money } from "@/lib/products";
+import {
+  fetchJson,
+  money,
+  normalizeProduct,
+  unwrapList,
+} from "@/lib/products";
 
 export default function PriceMarquee() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
+    let cancelled = false;
+
     fetchJson("/products")
       .then((data) => {
-        setProducts(data.products || data.data || data);
+        const list = unwrapList(data).map(normalizeProduct);
+
+        if (!cancelled) {
+          setProducts(list.filter((product) => product.id));
+        }
       })
-      .catch((error) => console.log(error));
+      .catch((error) => {
+        console.error("Price marquee failed to load:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -20,7 +36,9 @@ export default function PriceMarquee() {
       <div className="animate-marquee flex w-max gap-6 whitespace-nowrap">
         {products.map((product) => (
           <span key={product.id} className="text-sm">
-            <b>{product.name}</b>{" "}
+            <b>
+              {product.image} {product.name}
+            </b>{" "}
             {money(product.price)}/{product.unit}
             <span className="ml-6 text-gray-300">|</span>
           </span>
@@ -29,3 +47,4 @@ export default function PriceMarquee() {
     </div>
   );
 }
+
