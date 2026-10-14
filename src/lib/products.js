@@ -315,6 +315,5 @@ export function unwrapList(payload) {
     }
   }
 
-  // A single product/category object isn't a list.
   return [];
 }
